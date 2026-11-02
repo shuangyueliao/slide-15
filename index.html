@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="description" content="Slide 15 — classic sliding number puzzle with neon glow. 3x3, 4x4 and 5x5 grids, always-solvable shuffles, smooth animation. Free HTML5 game.">
+<meta name="theme-color" content="#07070f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%235b6cff'/><text x='32' y='43' font-family='sans-serif' font-size='26' font-weight='800' fill='white' text-anchor='middle'>15</text></svg>">
+<title>Slide 15 — Sliding Number Puzzle</title>
+<script>
+// 平台 SDK 按域名条件加载（独立运行时完全不加载，游戏行为不变）
+(function () {
+  var host = location.hostname || "";
+  try {
+    if (host.indexOf("crazygames") !== -1) {
+      var s1 = document.createElement("script");
+      s1.src = "https://sdk.crazygames.com/crazygames-sdk-v3.js";
+      s1.onload = function () {
+        if (window.CrazyGames && window.CrazyGames.SDK) {
+          window.CrazyGames.SDK.init().then(function () {
+            try { window.CrazyGames.SDK.game.loadingStart(); } catch (e) {}
+            window.addEventListener("load", function () { try { window.CrazyGames.SDK.game.loadingStop(); } catch (e) {} });
+          }).catch(function () {});
+        }
+      };
+      document.head.appendChild(s1);
+      window.__portal = "crazygames";
+    } else if (host.indexOf("gamedistribution") !== -1 || host.indexOf("html5.gamedistribution.com") !== -1 || host.indexOf("gd.games") !== -1) {
+      var s2 = document.createElement("script");
+      s2.src = "https://sdk.gamedistribution.com/v2/main.min.js";
+      document.head.appendChild(s2);
+      window.__portal = "gamedistribution";
+    }
+  } catch (e) {}
+})();
+</script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; overflow:hidden; background:#07070f; font-family:-apple-system,"Segoe UI","PingFang SC",sans-serif; }
+  #wrap { height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  #topbar { width:100%; max-width:480px; display:flex; justify-content:space-between; align-items:center; padding:8px 16px 0; }
+  #logo { font-size:15px; font-weight:800; letter-spacing:3px; color:#7c8cff; text-shadow:0 0 12px rgba(124,140,255,.6); }
+  #mute { background:#16162c; color:#9a9ac0; border:1px solid #30305a; border-radius:10px; padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer; letter-spacing:1px; font-family:inherit; }
+  #mute.off { color:#55556e; text-decoration:line-through; }
+  #hud { width:100%; max-width:480px; display:flex; justify-content:space-around; padding:6px 8px 2px; color:#e8e8f2; }
+  .stat { text-align:center; }
+  .stat .label { font-size:11px; color:#8a8aa8; letter-spacing:1px; }
+  .stat .val { font-size:20px; font-weight:800; }
+  #sizeBar { display:flex; gap:8px; padding:2px 0 8px; }
+  .sizeBtn { background:#16162c; color:#9a9ac0; border:1px solid #30305a; border-radius:10px; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer; letter-spacing:1px; font-family:inherit; }
+  .sizeBtn.active { color:#fff; border-color:#7c8cff; background:#20204a; box-shadow:0 0 10px rgba(124,140,255,.45); }
+  #game { display:block; border-radius:14px; touch-action:none; width:min(92vw,480px); height:auto; max-height:calc(100vh - 180px); }
+  #stage { position:relative; }
+  #overlay { position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(5,5,12,.78); z-index:5; border-radius:14px; }
+  #panel { background:#14142a; border:1px solid #30305a; border-radius:18px; padding:24px 28px; text-align:center; color:#fff; max-width:86%; }
+  #panel h2 { font-size:24px; margin-bottom:8px; letter-spacing:2px; }
+  #panel p { color:#9a9ac0; font-size:13px; margin-bottom:12px; line-height:1.55; }
+  #panel .final { font-size:34px; font-weight:900; color:#7c8cff; margin-bottom:6px; text-shadow:0 0 16px rgba(124,140,255,.7); }
+  #panel .record { color:#ffd76a; font-weight:800; font-size:14px; letter-spacing:2px; margin-bottom:8px; text-shadow:0 0 12px rgba(255,215,106,.6); }
+  .btnRow { display:flex; gap:10px; justify-content:center; margin-top:6px; flex-wrap:wrap; }
+  .pbtn { background:linear-gradient(135deg,#5b6cff,#8a5bff); color:#fff; border:none; border-radius:12px; padding:11px 20px; font-size:14px; font-weight:800; cursor:pointer; letter-spacing:1px; font-family:inherit; }
+  .pbtn:active { transform:scale(.96); }
+  #footer { color:#55556e; font-size:11px; padding:6px; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="topbar"><span id="logo">SLIDE 15</span><button id="mute">SOUND ON</button></div>
+  <div id="hud">
+    <div class="stat"><div class="label">MOVES</div><div class="val" id="moves">0</div></div>
+    <div class="stat"><div class="label">TIME</div><div class="val" id="time">0:00</div></div>
+    <div class="stat"><div class="label">BEST</div><div class="val" id="best">&mdash;</div></div>
+  </div>
+  <div id="sizeBar">
+    <button class="sizeBtn" data-n="3">3 &times; 3</button>
+    <button class="sizeBtn active" data-n="4">4 &times; 4</button>
+    <button class="sizeBtn" data-n="5">5 &times; 5</button>
+  </div>
+  <div id="stage">
+    <canvas id="game" width="480" height="600"></canvas>
+    <div id="overlay"><div id="panel">
+      <h2 id="ovTitle">SLIDE 15</h2>
+      <p id="ovText"></p>
+      <div class="final" id="finalTime" style="display:none">0:00</div>
+      <div class="record" id="recordLine" style="display:none"></div>
+      <p id="bestLine" style="display:none"></p>
+      <div class="btnRow" id="ovBtns"></div>
+    </div></div>
+  </div>
+  <div id="footer">Slide 15 &mdash; a free sliding puzzle game</div>
+</div>
+<script>
+"use strict";
+// ============ 常量与状态 ============
+var W = 480, H = 600;
+var PAD = 20, BOARD = W - PAD * 2;   // 棋盘是 440×440 的正方形区域
+var BX = PAD, BY = (H - BOARD) / 2;
+var ANIM_DUR = 0.11;                 // 单格滑动动画时长（秒）
+// 洗牌步数：从完成态随机合法走 N 步，数学上保证可解
+var SHUFFLE_STEPS = { 3: 60, 4: 150, 5: 300 };
+
+var canvas = document.getElementById("game");
+var ctx = canvas.getContext("2d");
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+canvas.width = W * dpr; canvas.height = H * dpr;
+ctx.scale(dpr, dpr);
+
+var el = {
+  moves: document.getElementById("moves"),
+  time: document.getElementById("time"),
+  best: document.getElementById("best"),
+  mute: document.getElementById("mute"),
+  overlay: document.getElementById("overlay"),
+  ovTitle: document.getElementById("ovTitle"),
+  ovText: document.getElementById("ovText"),
+  finalTime: document.getElementById("finalTime"),
+  recordLine: document.getElementById("recordLine"),
+  bestLine: document.getElementById("bestLine"),
+  ovBtns: document.getElementById("ovBtns")
+};
+
+var n = 4;              // 当前规格 3 / 4 / 5
+var cell = BOARD / n;
+var board = [];         // board[r][c] = 数值，0 表示空格
+var blank = { r: 3, c: 3 };
+var animMap = {};       // 数值 -> {fr, fc, t}：从 (fr,fc) 滑向当前逻辑格
+var state = "START";    // START | PLAY | WIN
+var moves = 0;
+var timerOn = false, startTime = 0, finalTime = 0;
+var lastTimeText = "";
+var particles = [];
+var muted = false;
+var bests = { 3: loadBest(3), 4: loadBest(4), 5: loadBest(5) };
+
+// ---------- 本地存储（全部 try/catch，隐私模式下静默降级） ----------
+function loadBest(size) {
+  try { return JSON.parse(localStorage.getItem("s15_best_" + size)) || null; } catch (e) { return null; }
+}
+function saveBest(size, rec) {
+  try { localStorage.setItem("s15_best_" + size, JSON.stringify(rec)); } catch (e) {}
+}
+try { muted = localStorage.getItem("s15_muted") === "1"; } catch (e) {}
+
+// ============ 工具 ============
+function fmtTime(sec) {
+  var m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+  return m + ":" + (s < 10 ? "0" : "") + s;
+}
+// 数值 -> 霓虹色相：从青色 195° 渐变到粉色 330°
+function hueOf(v) { return 195 + (v - 1) * (135 / Math.max(1, n * n - 2)); }
+function ease(t) { return t * (2 - t); }
+function elapsed() { return timerOn ? (performance.now() - startTime) / 1000 : finalTime; }
+
+// ============ 棋盘逻辑 ============
+function newBoard() { // 生成完成态：1..N-1 顺序排列，空格在右下角
+  board = [];
+  for (var r = 0; r < n; r++) {
+    board[r] = [];
+    for (var c = 0; c < n; c++) board[r][c] = (r * n + c + 1) % (n * n);
+  }
+  blank.r = n - 1; blank.c = n - 1;
+  animMap = {};
+}
+function isSolvedBoard() {
+  for (var r = 0; r < n; r++) for (var c = 0; c < n; c++)
+    if (board[r][c] !== (r * n + c + 1) % (n * n)) return false;
+  return true;
+}
+// 洗牌：从完成态出发随机合法走 N 步（不立刻走回头路），天然可解
+function shuffleBoard() {
+  var dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+  var steps = SHUFFLE_STEPS[n] || 150;
+  var lr = -1, lc = -1; // 上一次的空格位置，用来避免走回头路
+  for (var i = 0; i < steps; i++) {
+    var opts = [];
+    for (var d = 0; d < 4; d++) {
+      var r = blank.r + dirs[d][0], c = blank.c + dirs[d][1];
+      if (r < 0 || r >= n || c < 0 || c >= n) continue;
+      if (r === lr && c === lc) continue;
+      opts.push([r, c]);
+    }
+    if (!opts.length) continue;
+    var pick = opts[Math.floor(Math.random() * opts.length)];
+    board[blank.r][blank.c] = board[pick[0]][pick[1]];
+    board[pick[0]][pick[1]] = 0;
+    lr = blank.r; lc = blank.c;
+    blank.r = pick[0]; blank.c = pick[1];
+  }
+  var guard = 0; // 极小概率洗回完成态，再补走随机步直到离开完成态
+  while (isSolvedBoard() && guard++ < 20) {
+    var opts2 = [];
+    for (var d2 = 0; d2 < 4; d2++) {
+      var r2 = blank.r + dirs[d2][0], c2 = blank.c + dirs[d2][1];
+      if (r2 >= 0 && r2 < n && c2 >= 0 && c2 < n) opts2.push([r2, c2]);
+    }
+    var p2 = opts2[Math.floor(Math.random() * opts2.length)];
+    board[blank.r][blank.c] = board[p2[0]][p2[1]];
+    board[p2[0]][p2[1]] = 0;
+    blank.r = p2[0]; blank.c = p2[1];
+  }
+}
+// 点击同行/同列的块：把被点块与空格之间的整段一起向空格推动一格
+function tryMove(r, c) {
+  if (state !== "PLAY") return false;
+  if (r < 0 || r >= n || c < 0 || c >= n) return false;
+  if (r === blank.r && c === blank.c) return false;
+  if (r !== blank.r && c !== blank.c) return false; // 必须与空格同行或同列
+  var dr = 0, dc = 0;
+  if (r === blank.r) dc = blank.c > c ? 1 : -1;
+  else dr = blank.r > r ? 1 : -1;
+  var steps = Math.abs(blank.r - r) + Math.abs(blank.c - c);
+  for (var i = 0; i < steps; i++) {
+    // 紧邻空格、位于被点块一侧的那块滑入空格，空格顺次后移
+    var tr = blank.r - dr, tc = blank.c - dc;
+    var v = board[tr][tc];
+    board[blank.r][blank.c] = v;
+    board[tr][tc] = 0;
+    animMap[v] = { fr: tr, fc: tc, t: 0 }; // 目标位置是该块新的逻辑格
+    blank.r = tr; blank.c = tc;
+  }
+  moves++;
+  el.moves.textContent = moves;
+  if (!timerOn) { timerOn = true; startTime = performance.now(); } // 首次移动开始计时
+  sfxSlide(steps);
+  if (isSolvedBoard()) onWin();
+  return true;
+}
+function onWin() {
+  state = "WIN";
+  finalTime = (performance.now() - startTime) / 1000;
+  timerOn = false;
+  lastTimeText = fmtTime(finalTime);
+  el.time.textContent = lastTimeText;
+  spawnWinFX();
+  sfxWin();
+  // 最佳成绩：先比步数，步数相同再比用时；分规格存储
+  var rec = { moves: moves, time: Math.round(finalTime * 10) / 10 };
+  var old = bests[n];
+  var isRecord = !old || rec.moves < old.moves || (rec.moves === old.moves && rec.time < old.time);
+  if (isRecord) { bests[n] = rec; saveBest(n, rec); updateBestLabel(); }
+  notifyStop(); // 平台埋点：一局结束
+  setTimeout(function () { if (state === "WIN") showWin(rec, isRecord, old); }, 1200);
+}
+
+// ============ 音效（WebAudio 合成，零外部资源） ============
+var actx = null;
+function resumeAudio() {
+  try {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === "suspended") actx.resume();
+  } catch (e) {}
+}
+function beep(freq, dur, type, gainv, delay) {
+  try {
+    if (muted) return;
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === "suspended") actx.resume();
+    var t0 = actx.currentTime + (delay || 0);
+    var o = actx.createOscillator(), g = actx.createGain();
+    o.type = type || "sine";
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(gainv || 0.1, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t0); o.stop(t0 + dur);
+  } catch (e) {}
+}
+function sfxSlide(steps) { beep(230 + steps * 24 + Math.random() * 16, 0.06, "triangle", 0.07); }
+function sfxWin() { // 上行琶音庆祝
+  var seq = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+  for (var i = 0; i < seq.length; i++) beep(seq[i], 0.16, "triangle", 0.1, i * 0.09);
+}
+
+// ============ 平台埋点（SDK 仅在对应域名下由头部加载器注入） ============
+function notifyStart() {
+  try {
+    if (window.__portal === "crazygames" && window.CrazyGames && window.CrazyGames.SDK)
+      window.CrazyGames.SDK.game.gameplayStart();
+  } catch (e) {}
+}
+function notifyStop() {
+  try {
+    if (window.__portal === "crazygames" && window.CrazyGames && window.CrazyGames.SDK) {
+      window.CrazyGames.SDK.game.gameplayStop();
+      window.CrazyGames.SDK.game.happytime();
+    }
+  } catch (e) {}
+}
+
+// ============ 特效 ============
+function spawnWinFX() {
+  for (var i = 0; i < 90; i++) {
+    particles.push({
+      x: BX + Math.random() * BOARD,
+      y: BY + Math.random() * BOARD,
+      vx: (Math.random() * 2 - 1) * 150,
+      vy: -50 - Math.random() * 190,
+      life: 0.9 + Math.random() * 0.8,
+      color: "hsl(" + Math.floor(Math.random() * 360) + ",90%,65%)",
+      size: 2 + Math.random() * 3.5
+    });
+  }
+}
+
+// ============ 渲染 ============
+function roundRect(c, x, y, w, h, rad) {
+  c.beginPath();
+  c.moveTo(x + rad, y);
+  c.arcTo(x + w, y, x + w, y + h, rad);
+  c.arcTo(x + w, y + h, x, y + h, rad);
+  c.arcTo(x, y + h, x, y, rad);
+  c.arcTo(x, y, x + w, y, rad);
+  c.closePath();
+}
+// 背景环境光点（程序化，缓慢上飘）
+var ambient = [];
+for (var ai = 0; ai < 16; ai++) {
+  ambient.push({
+    x: Math.random() * W, y: Math.random() * H,
+    r: 1 + Math.random() * 2.2, s: 6 + Math.random() * 14,
+    hue: Math.floor(195 + Math.random() * 140),
+    a: 0.05 + Math.random() * 0.06
+  });
+}
+function drawTile(x, y, s, v, extraGlow) {
+  var hue = hueOf(v), pad = 3;
+  ctx.save();
+  ctx.shadowColor = "hsla(" + hue + ",95%,62%,.9)";
+  ctx.shadowBlur = 9 + (extraGlow || 0);
+  var g = ctx.createLinearGradient(x, y - s / 2, x, y + s / 2);
+  g.addColorStop(0, "hsl(" + hue + ",82%,62%)");
+  g.addColorStop(1, "hsl(" + hue + ",78%,40%)");
+  ctx.fillStyle = g;
+  roundRect(ctx, x - s / 2 + pad, y - s / 2 + pad, s - pad * 2, s - pad * 2, 10);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = "hsla(" + hue + ",100%,82%,.75)";
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, x - s / 2 + pad, y - s / 2 + pad, s - pad * 2, s - pad * 2, 10);
+  ctx.stroke();
+  ctx.fillStyle = "#fff";
+  ctx.font = "800 " + Math.round(s * 0.42) + "px -apple-system,'Segoe UI',sans-serif";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 3;
+  ctx.fillText(String(v), x, y + 1);
+  ctx.restore();
+}
+var last = 0;
+function frame(t) {
+  var dt = Math.min((t - last) / 1000, 0.05);
+  last = t;
+  var now = t / 1000;
+  // 背景
+  var bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, "#0d0d1e");
+  bg.addColorStop(1, "#07070f");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+  // 环境光点
+  for (var ai2 = 0; ai2 < ambient.length; ai2++) {
+    var orb = ambient[ai2];
+    orb.y -= orb.s * dt;
+    if (orb.y < -10) { orb.y = H + 10; orb.x = Math.random() * W; }
+    ctx.globalAlpha = orb.a;
+    ctx.fillStyle = "hsl(" + orb.hue + ",90%,65%)";
+    ctx.beginPath(); ctx.arc(orb.x, orb.y, orb.r, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  // 棋盘底板（胜利时呼吸发光）
+  ctx.save();
+  ctx.shadowColor = "rgba(124,140,255,.55)";
+  ctx.shadowBlur = state === "WIN" ? 22 + 14 * Math.sin(now * 5) : 10;
+  ctx.fillStyle = "rgba(255,255,255,.03)";
+  roundRect(ctx, BX - 8, BY - 8, BOARD + 16, BOARD + 16, 16);
+  ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = "rgba(124,140,255,.35)";
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, BX - 8, BY - 8, BOARD + 16, BOARD + 16, 16);
+  ctx.stroke();
+  // 槽位：空格底色特别区分 + 呼吸描边
+  for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) {
+    var isBlank = (r === blank.r && c === blank.c);
+    ctx.fillStyle = isBlank ? "rgba(124,140,255,.10)" : "rgba(255,255,255,.025)";
+    roundRect(ctx, BX + c * cell + 3, BY + r * cell + 3, cell - 6, cell - 6, 8);
+    ctx.fill();
+    if (isBlank && state === "PLAY") {
+      ctx.strokeStyle = "rgba(124,140,255," + (0.22 + 0.14 * Math.sin(now * 3)).toFixed(3) + ")";
+      ctx.lineWidth = 1.5;
+      roundRect(ctx, BX + c * cell + 3, BY + r * cell + 3, cell - 6, cell - 6, 8);
+      ctx.stroke();
+    }
+  }
+  // 滑动动画推进
+  for (var key in animMap) {
+    animMap[key].t += dt / ANIM_DUR;
+    if (animMap[key].t >= 1) delete animMap[key];
+  }
+  // 数字块
+  for (var r2 = 0; r2 < n; r2++) for (var c2 = 0; c2 < n; c2++) {
+    var v = board[r2][c2];
+    if (!v) continue;
+    var a = animMap[v];
+    var k = a ? ease(Math.min(1, a.t)) : 1;
+    var x = BX + (a ? a.fc + (c2 - a.fc) * k : c2) * cell + cell / 2;
+    var y = BY + (a ? a.fr + (r2 - a.fr) * k : r2) * cell + cell / 2;
+    var wg = state === "WIN" ? 9 + 9 * Math.sin(now * 6 + v * 0.6) : 0; // 胜利时每块交替发光
+    drawTile(x, y, cell - 7, v, wg);
+  }
+  // 胜利粒子
+  for (var p = particles.length - 1; p >= 0; p--) {
+    var pt = particles[p];
+    pt.life -= dt;
+    if (pt.life <= 0) { particles.splice(p, 1); continue; }
+    pt.x += pt.vx * dt; pt.y += pt.vy * dt; pt.vy += 240 * dt;
+    ctx.globalAlpha = Math.max(0, Math.min(1, pt.life));
+    ctx.fillStyle = pt.color;
+    ctx.fillRect(pt.x - pt.size / 2, pt.y - pt.size / 2, pt.size, pt.size);
+    ctx.globalAlpha = 1;
+  }
+  // 首步操作提示（走子前显示）
+  if (state === "PLAY" && moves === 0) {
+    ctx.globalAlpha = 0.5 + 0.18 * Math.sin(now * 2.2);
+    ctx.fillStyle = "#9a9ac0";
+    ctx.font = "12px -apple-system,'Segoe UI',sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("Tap a tile in the empty slot's row or column \u2014 or use arrow keys", W / 2, H - 40);
+    ctx.globalAlpha = 1;
+  }
+  // 计时显示（仅在文本变化时写 DOM）
+  if (state === "PLAY" && timerOn) {
+    var txt = fmtTime(elapsed());
+    if (txt !== lastTimeText) { lastTimeText = txt; el.time.textContent = txt; }
+  }
+  requestAnimationFrame(frame);
+}
+
+// ============ UI ============
+function updateBestLabel() {
+  var b = bests[n];
+  el.best.textContent = b ? fmtTime(b.time) : "\u2014";
+}
+function markSizeButtons() {
+  var btns = document.querySelectorAll(".sizeBtn");
+  for (var i = 0; i < btns.length; i++) {
+    var on = parseInt(btns[i].getAttribute("data-n"), 10) === n;
+    if (btns[i].classList) {
+      if (on) btns[i].classList.add("active"); else btns[i].classList.remove("active");
+    }
+  }
+}
+function bestText(size) {
+  var b = bests[size];
+  return b ? (b.moves + " moves \u00b7 " + fmtTime(b.time)) : null;
+}
+function clearBtns() { el.ovBtns.innerHTML = ""; }
+function addBtn(label, fn) {
+  var b = document.createElement("button");
+  b.className = "pbtn";
+  b.textContent = label;
+  b.addEventListener("click", function (e) {
+    e.stopPropagation();
+    if (e.currentTarget && e.currentTarget.blur) e.currentTarget.blur(); // 防止空格键误触按钮
+    resumeAudio();
+    fn();
+  });
+  el.ovBtns.appendChild(b);
+}
+function hideOverlay() { el.overlay.style.display = "none"; }
+function showStart() {
+  state = "START";
+  el.ovTitle.textContent = "SLIDE 15";
+  el.ovText.textContent = "Slide the numbered tiles back into order. Tap any tile in the empty slot's row or column to push the whole line. Arrow keys move tiles next to the gap.";
+  el.finalTime.style.display = "none";
+  el.recordLine.style.display = "none";
+  el.bestLine.style.display = "block";
+  var b = bestText(n);
+  el.bestLine.textContent = b ? ("Best " + n + "\u00d7" + n + " \u2014 " + b) : "No record yet \u2014 set the first one!";
+  clearBtns();
+  addBtn("PLAY 3\u00d73", function () { startGame(3); });
+  addBtn("PLAY 4\u00d74", function () { startGame(4); });
+  addBtn("PLAY 5\u00d75", function () { startGame(5); });
+  el.overlay.style.display = "flex";
+}
+function showWin(rec, isRecord, old) {
+  el.ovTitle.textContent = "PUZZLE SOLVED!";
+  el.ovText.textContent = n + " \u00d7 " + n + " board complete";
+  el.finalTime.style.display = "block";
+  el.finalTime.textContent = fmtTime(rec.time);
+  el.recordLine.style.display = isRecord ? "block" : "none";
+  el.recordLine.textContent = "NEW RECORD!";
+  el.bestLine.style.display = "block";
+  if (isRecord) el.bestLine.textContent = old
+    ? ("Previous best \u2014 " + old.moves + " moves \u00b7 " + fmtTime(old.time))
+    : "Your first record on this board!";
+  else el.bestLine.textContent = "Best " + n + "\u00d7" + n + " \u2014 " + bestText(n);
+  clearBtns();
+  addBtn("PLAY AGAIN", function () { startGame(n); });
+  addBtn("MENU", function () { goMenu(); });
+  el.overlay.style.display = "flex";
+}
+function goMenu() {
+  newBoard();
+  moves = 0; finalTime = 0; timerOn = false; lastTimeText = "";
+  el.moves.textContent = "0";
+  el.time.textContent = "0:00";
+  updateBestLabel();
+  showStart();
+}
+function startGame(size) {
+  n = size;
+  cell = BOARD / n;
+  newBoard();
+  shuffleBoard();
+  moves = 0; finalTime = 0; timerOn = false; lastTimeText = "";
+  el.moves.textContent = "0";
+  el.time.textContent = "0:00";
+  updateBestLabel();
+  markSizeButtons();
+  hideOverlay();
+  state = "PLAY";
+  notifyStart(); // 平台埋点：开始一局
+}
+
+// ============ 输入（桌面 + 移动双通道） ============
+function cellFromPoint(clientX, clientY) {
+  var rect = canvas.getBoundingClientRect();
+  var x = (clientX - rect.left) / rect.width * W;
+  var y = (clientY - rect.top) / rect.height * H;
+  return { r: Math.floor((y - BY) / cell), c: Math.floor((x - BX) / cell) };
+}
+canvas.addEventListener("mousedown", function (e) {
+  resumeAudio();
+  var p = cellFromPoint(e.clientX, e.clientY);
+  tryMove(p.r, p.c);
+});
+canvas.addEventListener("touchstart", function (e) {
+  e.preventDefault(); // 阻止移动端滚动 / 双击缩放
+  resumeAudio();
+  var t = e.touches[0];
+  var p = cellFromPoint(t.clientX, t.clientY);
+  tryMove(p.r, p.c);
+}, { passive: false });
+canvas.addEventListener("touchmove", function (e) { e.preventDefault(); }, { passive: false });
+document.addEventListener("keydown", function (e) {
+  if (state !== "PLAY") {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); resumeAudio(); startGame(n); }
+    return;
+  }
+  var r = -1, c = -1;
+  // 方向键 = 该方向上紧邻空格的那一块向空格方向滑动
+  if (e.key === "ArrowUp") { r = blank.r + 1; c = blank.c; }
+  else if (e.key === "ArrowDown") { r = blank.r - 1; c = blank.c; }
+  else if (e.key === "ArrowLeft") { r = blank.r; c = blank.c + 1; }
+  else if (e.key === "ArrowRight") { r = blank.r; c = blank.c - 1; }
+  if (r >= 0) { e.preventDefault(); tryMove(r, c); }
+});
+// 静音按钮
+function applyMute() {
+  el.mute.textContent = muted ? "SOUND OFF" : "SOUND ON";
+  if (el.mute.classList) {
+    if (muted) el.mute.classList.add("off"); else el.mute.classList.remove("off");
+  }
+}
+el.mute.addEventListener("click", function (e) {
+  e.stopPropagation();
+  if (e.currentTarget && e.currentTarget.blur) e.currentTarget.blur();
+  muted = !muted;
+  try { localStorage.setItem("s15_muted", muted ? "1" : "0"); } catch (e2) {}
+  applyMute();
+  if (!muted) { resumeAudio(); beep(660, 0.05, "sine", 0.06); }
+});
+// 规格切换按钮
+var sizeBtns = document.querySelectorAll(".sizeBtn");
+for (var si = 0; si < sizeBtns.length; si++) {
+  (function (btn) {
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (e.currentTarget && e.currentTarget.blur) e.currentTarget.blur();
+      resumeAudio();
+      beep(520, 0.05, "sine", 0.06);
+      startGame(parseInt(btn.getAttribute("data-n"), 10));
+    });
+  })(sizeBtns[si]);
+}
+
+// ============ 初始化 ============
+applyMute();
+newBoard();          // 菜单背后展示完成态棋盘
+updateBestLabel();
+markSizeButtons();
+showStart();
+requestAnimationFrame(frame);
+
+// 调试/测试钩子（不影响游戏逻辑）
+window.__s15 = {
+  get board() { return board; },
+  get blank() { return blank; },
+  get state() { return state; },
+  get moves() { return moves; },
+  get n() { return n; },
+  newBoard: newBoard,
+  startGame: startGame,
+  tryMove: tryMove,
+  shuffleBoard: shuffleBoard,
+  isSolvedBoard: isSolvedBoard
+};
+</script>
+</body>
+</html>
